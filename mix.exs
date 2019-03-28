@@ -3,10 +3,11 @@ defmodule Accent.Mixfile do
 
   def project do
     [
+      organization: "bunz",
       app: :accent,
       name: "Accent",
       description: "Plug for converting JSON API keys to different cases",
-      version: "0.2.1",
+      version: "0.3.0",
       elixir: "~> 1.3",
       build_embedded: Mix.env() == :prod,
       start_permanent: Mix.env() == :prod,
