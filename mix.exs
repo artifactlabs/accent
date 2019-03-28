@@ -33,6 +33,7 @@ defmodule Accent.Mixfile do
       {:poison, ">= 3.1.0 and < 5.0.0", optional: true},
       # dev
       {:ex_doc, ">= 0.0.0", only: [:dev]},
+      {:mix_test_watch, "~> 0.8", only: :dev, runtime: false},
       # test
       {:excoveralls, "~> 0.10", only: [:test]}
     ]
