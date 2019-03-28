@@ -39,17 +39,20 @@ defmodule Accent.Plug.Response do
     "snake" => Accent.Transformer.SnakeCase
   }
 
+  @default_accent nil
+
   @doc false
   def init(opts \\ []) do
     %{
-      header: opts[:header] || "accent",
+      header: Keyword.get(opts, :header, "accent"),
       json_decoder:
         opts[:json_decoder] ||
           raise(ArgumentError, "Accent.Plug.Response expects a :json_decoder option"),
       json_encoder:
         opts[:json_encoder] ||
           raise(ArgumentError, "Accent.Plug.Response expects a :json_encoder option"),
-      supported_cases: opts[:supported_cases] || @default_cases
+      supported_cases: opts[:supported_cases] || @default_cases,
+      default_accent: opts[:default_accent] || @default_accent
     }
   end
 
@@ -106,8 +109,18 @@ defmodule Accent.Plug.Response do
     is_json && has_transformer
   end
 
+  defp default_accent(nil, opts), do: opts[:default_accent]
+  defp default_accent(accent, _), do: accent
+
+  defp get_request_accent(_conn, nil) do
+    [nil]
+  end
+  defp get_request_accent(conn, accent_header) do
+    get_req_header(conn, accent_header)
+  end
+
   defp select_transformer(conn, opts) do
-    accent = get_req_header(conn, opts[:header]) |> Enum.at(0)
+    accent = get_request_accent(conn, opts[:header]) |> Enum.at(0) |> default_accent(opts)
     supported_cases = opts[:supported_cases]
 
     supported_cases[accent]

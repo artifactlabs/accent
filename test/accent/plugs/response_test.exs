@@ -5,6 +5,8 @@ defmodule Accent.Plug.ResponseTest do
   @default_opts [json_decoder: Poison, json_encoder: Poison]
 
   @opts Accent.Plug.Response.init(json_decoder: Poison, json_encoder: Poison)
+  @opts_with_default_accent Accent.Plug.Response.init(json_decoder: Poison, json_encoder: Poison, default_accent: "pascal")
+  @opts_with_default_accent_and_a_nil_header Accent.Plug.Response.init(json_decoder: Poison, json_encoder: Poison, default_accent: "pascal", header: nil)
 
   describe "init/1" do
     test "sets the \"header\" option to the value passed in" do
@@ -90,7 +92,42 @@ defmodule Accent.Plug.ResponseTest do
       assert conn.resp_body == "{\"helloWorld\":\"value\"}"
     end
 
-    test "skips conversion if no header is provided" do
+    test "uses the default conversion if one is provided" do
+      conn =
+      conn(:post, "/")
+      |> put_req_header("content-type", "application/json")
+      |> put_resp_header("content-type", "application/json")
+      |> Accent.Plug.Response.call(@opts_with_default_accent)
+      |> Plug.Conn.send_resp(200, "{\"hello_world\":\"value\"}")
+
+      assert conn.resp_body == "{\"helloWorld\":\"value\"}"
+    end
+
+    test "uses the header conversion if its present ignoring the default conversion" do
+      conn =
+        conn(:post, "/")
+        |> put_req_header("accent", "camel")
+        |> put_req_header("content-type", "application/json")
+        |> put_resp_header("content-type", "application/json")
+        |> Accent.Plug.Response.call(@opts_with_default_accent)
+        |> Plug.Conn.send_resp(200, "{\"hello_world\":\"value\"}")
+
+      assert conn.resp_body == "{\"HelloWorld\":\"value\"}"
+    end
+
+    test "ignores header conversion if it was initialized to nil" do
+      conn =
+        conn(:post, "/")
+        |> put_req_header("accent", "camel")
+        |> put_req_header("content-type", "application/json")
+        |> put_resp_header("content-type", "application/json")
+        |> Accent.Plug.Response.call(@opts_with_default_accent_and_a_nil_header)
+        |> Plug.Conn.send_resp(200, "{\"hello_world\":\"value\"}")
+
+      assert conn.resp_body == "{\"helloWorld\":\"value\"}"
+    end
+
+    test "skips conversion if no header and no default is provided" do
       conn =
         conn(:post, "/")
         |> put_req_header("content-type", "application/json")
