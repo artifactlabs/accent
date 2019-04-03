@@ -7,7 +7,7 @@ defmodule Accent.Mixfile do
       app: :accent,
       name: "Accent",
       description: "Plug for converting JSON API keys to different cases",
-      version: "0.3.0",
+      version: "0.4.0",
       elixir: "~> 1.3",
       build_embedded: Mix.env() == :prod,
       start_permanent: Mix.env() == :prod,
