@@ -44,8 +44,10 @@ defmodule Accent.Mixfile do
     cond do
       Version.match?(System.version(), ">= 1.3.0 and < 1.4.0") ->
         "mix_1_3.lock"
+
       Version.match?(System.version(), ">= 1.4.0 and < 1.6.0") ->
         "mix_1_4.lock"
+
       true ->
         "mix.lock"
     end

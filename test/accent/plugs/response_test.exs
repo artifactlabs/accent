@@ -5,8 +5,32 @@ defmodule Accent.Plug.ResponseTest do
   @default_opts [json_decoder: Poison, json_encoder: Poison]
 
   @opts Accent.Plug.Response.init(json_decoder: Poison, json_encoder: Poison)
-  @opts_with_default_accent Accent.Plug.Response.init(json_decoder: Poison, json_encoder: Poison, default_accent: "pascal")
-  @opts_with_default_accent_and_a_nil_header Accent.Plug.Response.init(json_decoder: Poison, json_encoder: Poison, default_accent: "pascal", header: nil)
+  @opts_nil_content Accent.Plug.Response.init(
+                      json_decoder: Poison,
+                      json_encoder: Poison,
+                      content_type: nil
+                    )
+  @opts_text_content Accent.Plug.Response.init(
+                       json_decoder: Poison,
+                       json_encoder: Poison,
+                       content_type: "text/html"
+                     )
+  @opts_text_content_and_jason Accent.Plug.Response.init(
+                                 json_decoder: Jason,
+                                 json_encoder: Jason,
+                                 content_type: "text/html"
+                               )
+  @opts_with_default_accent Accent.Plug.Response.init(
+                              json_decoder: Poison,
+                              json_encoder: Poison,
+                              default_accent: "pascal"
+                            )
+  @opts_with_default_accent_and_a_nil_header Accent.Plug.Response.init(
+                                               json_decoder: Poison,
+                                               json_encoder: Poison,
+                                               default_accent: "pascal",
+                                               header: nil
+                                             )
 
   describe "init/1" do
     test "sets the \"header\" option to the value passed in" do
@@ -94,11 +118,11 @@ defmodule Accent.Plug.ResponseTest do
 
     test "uses the default conversion if one is provided" do
       conn =
-      conn(:post, "/")
-      |> put_req_header("content-type", "application/json")
-      |> put_resp_header("content-type", "application/json")
-      |> Accent.Plug.Response.call(@opts_with_default_accent)
-      |> Plug.Conn.send_resp(200, "{\"hello_world\":\"value\"}")
+        conn(:post, "/")
+        |> put_req_header("content-type", "application/json")
+        |> put_resp_header("content-type", "application/json")
+        |> Accent.Plug.Response.call(@opts_with_default_accent)
+        |> Plug.Conn.send_resp(200, "{\"hello_world\":\"value\"}")
 
       assert conn.resp_body == "{\"helloWorld\":\"value\"}"
     end
@@ -148,6 +172,52 @@ defmodule Accent.Plug.ResponseTest do
         |> Plug.Conn.send_resp(200, "<p>This is not JSON, but it includes some hello_world</p>")
 
       assert conn.resp_body == "<p>This is not JSON, but it includes some hello_world</p>"
+    end
+
+    test "can be initialized with a different content convention" do
+      conn =
+        conn(:post, "/")
+        |> put_req_header("accent", "pascal")
+        |> put_req_header("content-type", "text/html")
+        |> put_resp_header("content-type", "text/html")
+        |> Accent.Plug.Response.call(@opts_text_content)
+        |> Plug.Conn.send_resp(200, "{\"hello_world\":\"value\"}")
+
+      assert conn.resp_body == "{\"helloWorld\":\"value\"}"
+    end
+
+    test "skips conversion if response is not JSON (Poison)" do
+      conn =
+        conn(:post, "/")
+        |> put_req_header("accent", "pascal")
+        |> put_req_header("content-type", "text/html")
+        |> put_resp_header("content-type", "text/html")
+        |> Accent.Plug.Response.call(@opts_text_content)
+        |> Plug.Conn.send_resp(200, "<p>This is not JSON, but it includes some hello_world</p>")
+
+      assert conn.resp_body == "<p>This is not JSON, but it includes some hello_world</p>"
+    end
+
+    test "skips conversion if response is not JSON (Jason)" do
+      conn =
+        conn(:post, "/")
+        |> put_req_header("accent", "pascal")
+        |> put_req_header("content-type", "text/html")
+        |> put_resp_header("content-type", "text/html")
+        |> Accent.Plug.Response.call(@opts_text_content_and_jason)
+        |> Plug.Conn.send_resp(200, "<p>This is not JSON, but it includes some hello_world</p>")
+
+      assert conn.resp_body == "<p>This is not JSON, but it includes some hello_world</p>"
+    end
+
+    test "can be initialized to ignore content convention" do
+      conn =
+        conn(:post, "/")
+        |> put_req_header("accent", "pascal")
+        |> Accent.Plug.Response.call(@opts_nil_content)
+        |> Plug.Conn.send_resp(200, "{\"hello_world\":\"value\"}")
+
+      assert conn.resp_body == "{\"helloWorld\":\"value\"}"
     end
   end
 end
