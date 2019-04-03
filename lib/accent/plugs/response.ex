@@ -70,9 +70,6 @@ defmodule Accent.Plug.Response do
 
   # private
 
-  # This function is a little dirty would love to clean it up, it returns a tuple {x, y}
-  # where x is if the headers support a json response and y is the decoded response body
-  # if its present
   defp jsonable?(conn, opts) do
     response_content_type =
       conn
@@ -84,23 +81,20 @@ defmodule Accent.Plug.Response do
       |> get_req_header("content-type")
       |> Enum.at(0)
 
-    json_decoder = opts[:json_decoder]
-
-    valid_content_type =
       opts[:content_type] == nil or
-        (String.contains?(response_content_type || "", opts[:content_type]) and
-           String.contains?(content_type || "", opts[:content_type]))
+      (String.contains?(response_content_type || "", opts[:content_type]) and
+      String.contains?(content_type || "", opts[:content_type]))
+  end
 
-    if valid_content_type == true and conn.resp_body != nil do
+  def decode(conn, opts) do
+      json_decoder = opts[:json_decoder]
+
       try do
-        {valid_content_type, json_decoder.decode!(conn.resp_body)}
+        {:ok, json_decoder.decode!(conn.resp_body)}
       rescue
-        Poison.ParseError -> {false, nil}
-        Jason.DecodeError -> {false, nil}
+        Poison.ParseError -> {:error, :resp_body_not_decoadable}
+        Jason.DecodeError -> {:error, :resp_body_not_decoadable}
       end
-    else
-      {valid_content_type, nil}
-    end
   end
 
   defp before_send_callback(conn, opts) do
@@ -108,9 +102,9 @@ defmodule Accent.Plug.Response do
     # as a general feature because they may have specifications for the param
     # names - e.g. https://tools.ietf.org/html/rfc7265#page-6 that mean the
     # translation would be inappropriate
-    {is_json_response, body} = jsonable?(conn, opts)
+    with true <- jsonable?(conn, opts),
+      {:ok, body} <- decode(conn, opts) do
 
-    if is_json_response do
       json_encoder = opts[:json_encoder]
 
       resp_body =
@@ -120,12 +114,12 @@ defmodule Accent.Plug.Response do
 
       %{conn | resp_body: resp_body}
     else
-      conn
+      _ -> conn
     end
   end
 
   defp do_call?(conn, opts) do
-    {is_json, _} = jsonable?(conn, opts)
+    is_json = jsonable?(conn, opts)
 
     has_transformer = select_transformer(conn, opts)
 
