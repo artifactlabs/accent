@@ -102,19 +102,19 @@ defmodule Accent.Plug.Response do
     # as a general feature because they may have specifications for the param
     # names - e.g. https://tools.ietf.org/html/rfc7265#page-6 that mean the
     # translation would be inappropriate
-    with true <- jsonable?(conn, opts),
-      {:ok, body} <- decode(conn, opts) do
-
+    if jsonable?(conn, opts) == true do
+      json_decoder = opts[:json_decoder]
       json_encoder = opts[:json_encoder]
 
       resp_body =
-        body
+        conn.resp_body
+        |> json_decoder.decode!
         |> transform(select_transformer(conn, opts))
         |> json_encoder.encode!
 
       %{conn | resp_body: resp_body}
     else
-      _ -> conn
+      conn
     end
   end
 

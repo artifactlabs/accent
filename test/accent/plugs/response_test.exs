@@ -186,29 +186,27 @@ defmodule Accent.Plug.ResponseTest do
       assert conn.resp_body == "{\"helloWorld\":\"value\"}"
     end
 
-    test "skips conversion if response is not JSON (Poison)" do
-      conn =
+    test "errors if response is not JSON (Poison)" do
+      assert_raise Poison.ParseError, fn ->
         conn(:post, "/")
         |> put_req_header("accent", "pascal")
         |> put_req_header("content-type", "text/html")
         |> put_resp_header("content-type", "text/html")
         |> Accent.Plug.Response.call(@opts_text_content)
         |> Plug.Conn.send_resp(200, "<p>This is not JSON, but it includes some hello_world</p>")
-
-      assert conn.resp_body == "<p>This is not JSON, but it includes some hello_world</p>"
+      end
     end
 
-    test "skips conversion if response is not JSON (Jason)" do
-      conn =
+    test "errors if response is not JSON (Jason)" do
+      assert_raise Jason.DecodeError, fn ->
         conn(:post, "/")
         |> put_req_header("accent", "pascal")
         |> put_req_header("content-type", "text/html")
         |> put_resp_header("content-type", "text/html")
         |> Accent.Plug.Response.call(@opts_text_content_and_jason)
         |> Plug.Conn.send_resp(200, "<p>This is not JSON, but it includes some hello_world</p>")
-
-      assert conn.resp_body == "<p>This is not JSON, but it includes some hello_world</p>"
-    end
+        end
+      end
 
     test "can be initialized to ignore content convention" do
       conn =
