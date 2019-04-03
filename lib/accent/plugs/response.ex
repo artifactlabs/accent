@@ -86,17 +86,6 @@ defmodule Accent.Plug.Response do
       String.contains?(content_type || "", opts[:content_type]))
   end
 
-  def decode(conn, opts) do
-      json_decoder = opts[:json_decoder]
-
-      try do
-        {:ok, json_decoder.decode!(conn.resp_body)}
-      rescue
-        Poison.ParseError -> {:error, :resp_body_not_decoadable}
-        Jason.DecodeError -> {:error, :resp_body_not_decoadable}
-      end
-  end
-
   defp before_send_callback(conn, opts) do
     # Note - we don't support "+json" content types, and probably shouldn't add
     # as a general feature because they may have specifications for the param
