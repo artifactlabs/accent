@@ -40,6 +40,7 @@ defmodule Accent.Plug.Response do
   }
 
   @default_accent nil
+  @default_content_type "application/json"
 
   @doc false
   def init(opts \\ []) do
@@ -52,7 +53,8 @@ defmodule Accent.Plug.Response do
         opts[:json_encoder] ||
           raise(ArgumentError, "Accent.Plug.Response expects a :json_encoder option"),
       supported_cases: opts[:supported_cases] || @default_cases,
-      default_accent: opts[:default_accent] || @default_accent
+      default_accent: opts[:default_accent] || @default_accent,
+      content_type: Keyword.get(opts, :content_type, @default_content_type)
     }
   end
 
@@ -68,19 +70,28 @@ defmodule Accent.Plug.Response do
 
   # private
 
-  defp before_send_callback(conn, opts) do
+  defp jsonable?(conn, opts) do
     response_content_type =
       conn
       |> get_resp_header("content-type")
       |> Enum.at(0)
 
+    content_type =
+      conn
+      |> get_req_header("content-type")
+      |> Enum.at(0)
+
+      opts[:content_type] == nil or
+      (String.contains?(response_content_type || "", opts[:content_type]) and
+      String.contains?(content_type || "", opts[:content_type]))
+  end
+
+  defp before_send_callback(conn, opts) do
     # Note - we don't support "+json" content types, and probably shouldn't add
     # as a general feature because they may have specifications for the param
     # names - e.g. https://tools.ietf.org/html/rfc7265#page-6 that mean the
     # translation would be inappropriate
-    is_json_response = String.contains?(response_content_type || "", "application/json")
-
-    if is_json_response do
+    if jsonable?(conn, opts) == true do
       json_decoder = opts[:json_decoder]
       json_encoder = opts[:json_encoder]
 
@@ -97,12 +108,7 @@ defmodule Accent.Plug.Response do
   end
 
   defp do_call?(conn, opts) do
-    content_type =
-      conn
-      |> get_req_header("content-type")
-      |> Enum.at(0)
-
-    is_json = String.contains?(content_type || "", "application/json")
+    is_json = jsonable?(conn, opts)
 
     has_transformer = select_transformer(conn, opts)
 
@@ -115,6 +121,7 @@ defmodule Accent.Plug.Response do
   defp get_request_accent(_conn, nil) do
     [nil]
   end
+
   defp get_request_accent(conn, accent_header) do
     get_req_header(conn, accent_header)
   end
