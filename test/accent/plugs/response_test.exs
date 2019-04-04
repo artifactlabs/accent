@@ -32,7 +32,6 @@ defmodule Accent.Plug.ResponseTest do
                                                header: nil
                                              )
 
-  # @json_variants "{\"_id\":\"_id\",\"_mongo_id\":\"_mongo_id\",\"normal_test\":\"normal_test\",\"single\":\"single\",\"__v\":\"__v\"}"
   @json_variants Jason.encode!(%{
                    _id: "_id",
                    _mongo_id: "_mongo_id",
