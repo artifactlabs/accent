@@ -36,6 +36,7 @@ defmodule Accent.Plug.Response do
   @default_cases %{
     "camel" => Accent.Transformer.CamelCase,
     "pascal" => Accent.Transformer.PascalCase,
+    "_pascal" => Accent.Transformer.PascalWithLeadingUnderscoreCase,
     "snake" => Accent.Transformer.SnakeCase
   }
 
