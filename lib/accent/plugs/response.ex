@@ -82,9 +82,9 @@ defmodule Accent.Plug.Response do
       |> get_req_header("content-type")
       |> Enum.at(0)
 
-      opts[:content_type] == nil or
+    opts[:content_type] == nil or
       (String.contains?(response_content_type || "", opts[:content_type]) and
-      String.contains?(content_type || "", opts[:content_type]))
+         String.contains?(content_type || "", opts[:content_type]))
   end
 
   defp before_send_callback(conn, opts) do
