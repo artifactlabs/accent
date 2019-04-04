@@ -32,6 +32,24 @@ defmodule Accent.Plug.ResponseTest do
                                                header: nil
                                              )
 
+  # @json_variants "{\"_id\":\"_id\",\"_mongo_id\":\"_mongo_id\",\"normal_test\":\"normal_test\",\"single\":\"single\",\"__v\":\"__v\"}"
+  @json_variants Jason.encode!(%{
+    "_id": "_id",
+    "_mongo_id": "_mongo_id",
+    "normal_test": "normal_test",
+    "single": "single",
+    "__v": "__v",
+    "0": %{
+      "_1": %{
+        "__2": %{
+          "___3": %{
+            "____4": "____4"
+          }
+        }
+      }
+    }
+    })
+
   describe "init/1" do
     test "sets the \"header\" option to the value passed in" do
       opts = Accent.Plug.Response.init(@default_opts ++ [header: "x-accent"])
@@ -95,52 +113,53 @@ defmodule Accent.Plug.ResponseTest do
   describe "call/2" do
     test "converts keys based on value passed to header" do
       conn =
-        conn(:post, "/")
-        |> put_req_header("accent", "pascal")
-        |> put_req_header("content-type", "application/json")
-        |> put_resp_header("content-type", "application/json")
-        |> Accent.Plug.Response.call(@opts)
-        |> Plug.Conn.send_resp(200, "{\"hello_world\":\"value\"}")
+      conn(:post, "/")
+      |> put_req_header("accent", "pascal")
+      |> put_req_header("content-type", "application/json")
+      |> put_resp_header("content-type", "application/json")
+      |> Accent.Plug.Response.call(@opts)
+      |> Plug.Conn.send_resp(200, "{\"hello_world\":\"value\"}")
 
       assert conn.resp_body == "{\"helloWorld\":\"value\"}"
     end
 
     test "converts _id to camel" do
       conn =
-        conn(:post, "/")
-        |> put_req_header("accent", "camel")
-        |> put_req_header("content-type", "application/json")
-        |> put_resp_header("content-type", "application/json")
-        |> Accent.Plug.Response.call(@opts)
-        |> Plug.Conn.send_resp(200, "{\"_id\":\"_id\",\"_mongo_id\":\"_mongo_id\",\"normal_test\":\"normal_test\",\"single\":\"single\"}")
+      conn(:post, "/")
+      |> put_req_header("accent", "camel")
+      |> put_req_header("content-type", "application/json")
+      |> put_resp_header("content-type", "application/json")
+      |> Accent.Plug.Response.call(@opts)
+      |> Plug.Conn.send_resp(200, @json_variants)
 
-      assert conn.resp_body == "{\"Single\":\"single\",\"NormalTest\":\"normal_test\",\"MongoId\":\"_mongo_id\",\"Id\":\"_id\"}"
+      assert conn.resp_body == "{\"V\":\"__v\",\"Single\":\"single\",\"NormalTest\":\"normal_test\",\"MongoId\":\"_mongo_id\",\"Id\":\"_id\",\"0\":{\"1\":{\"2\":{\"3\":{\"4\":\"____4\"}}}}}"
     end
 
     test "converts _id to pascal" do
       conn =
-        conn(:post, "/")
-        |> put_req_header("accent", "pascal")
-        |> put_req_header("content-type", "application/json")
-        |> put_resp_header("content-type", "application/json")
-        |> Accent.Plug.Response.call(@opts)
-        |> Plug.Conn.send_resp(200, "{\"_id\":\"_id\",\"_mongo_id\":\"_mongo_id\",\"normal_test\":\"normal_test\",\"single\":\"single\"}")
+      conn(:post, "/")
+      |> put_req_header("accent", "pascal")
+      |> put_req_header("content-type", "application/json")
+      |> put_resp_header("content-type", "application/json")
+      |> Accent.Plug.Response.call(@opts)
+      |> Plug.Conn.send_resp(200, @json_variants)
 
-      assert conn.resp_body == "{\"single\":\"single\",\"normalTest\":\"normal_test\",\"mongoId\":\"_mongo_id\",\"id\":\"_id\"}"
+      assert conn.resp_body == "{\"v\":\"__v\",\"single\":\"single\",\"normalTest\":\"normal_test\",\"mongoId\":\"_mongo_id\",\"id\":\"_id\",\"0\":{\"1\":{\"2\":{\"3\":{\"4\":\"____4\"}}}}}"
     end
 
     test "converts _id to snake" do
       conn =
-        conn(:post, "/")
-        |> put_req_header("accent", "pascal")
-        |> put_req_header("content-type", "application/json")
-        |> put_resp_header("content-type", "application/json")
-        |> Accent.Plug.Response.call(@opts)
-        |> Plug.Conn.send_resp(200, "{\"_id\":\"_id\",\"_mongo_id\":\"_mongo_id\",\"normal_test\":\"normal_test\",\"single\":\"single\"}")
+      conn(:post, "/")
+      |> put_req_header("accent", "pascal")
+      |> put_req_header("content-type", "application/json")
+      |> put_resp_header("content-type", "application/json")
+      |> Accent.Plug.Response.call(@opts)
+      |> Plug.Conn.send_resp(200, @json_variants)
 
-      assert conn.resp_body == "{\"single\":\"single\",\"normalTest\":\"normal_test\",\"mongoId\":\"_mongo_id\",\"id\":\"_id\"}"
+      assert conn.resp_body == "{\"v\":\"__v\",\"single\":\"single\",\"normalTest\":\"normal_test\",\"mongoId\":\"_mongo_id\",\"id\":\"_id\",\"0\":{\"1\":{\"2\":{\"3\":{\"4\":\"____4\"}}}}}"
     end
 
+    @tag :wip
     test "converts _id to _pascal" do
       conn =
         conn(:post, "/")
@@ -148,9 +167,9 @@ defmodule Accent.Plug.ResponseTest do
         |> put_req_header("content-type", "application/json")
         |> put_resp_header("content-type", "application/json")
         |> Accent.Plug.Response.call(@opts)
-        |> Plug.Conn.send_resp(200, "{\"_id\":\"_id\",\"_mongo_id\":\"_mongo_id\",\"normal_test\":\"normal_test\",\"single\":\"single\"}")
+        |> Plug.Conn.send_resp(200, @json_variants)
 
-        assert conn.resp_body == "{\"single\":\"single\",\"normalTest\":\"normal_test\",\"_mongoId\":\"_mongo_id\",\"_id\":\"_id\"}"
+        assert conn.resp_body == "{\"single\":\"single\",\"normalTest\":\"normal_test\",\"_mongoId\":\"_mongo_id\",\"_id\":\"_id\",\"__v\":\"__v\",\"0\":{\"_1\":{\"__2\":{\"___3\":{\"____4\":\"____4\"}}}}}"
     end
 
     test "deals with content-type having a charset" do
